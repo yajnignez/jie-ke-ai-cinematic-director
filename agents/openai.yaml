@@ -1,0 +1,5 @@
+interface:
+  display_name: "JIEKE AI Cinematic Director"
+  short_description: "Direct cinematic AI video with shot planning, acting, and optics"
+  default_prompt: "Use $jie-ke-ai-cinematic-director to turn my idea, script, or reference image into a production-ready cinematic video prompt."
+  # JIEKE AI SHOTLAB
