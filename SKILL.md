@@ -9,35 +9,7 @@ description: Create production-ready cinematic AI-video prompts and shot plans f
 
 Treat every prompt as a small director's plan: decide why the shot exists, what visibly changes, how the camera observes it, and what state the shot ends in. Prefer clear causal language over adjective stacks.
 
-## Seedance 2.5 V5 structured prompts
-
-When the target is Seedance 2.5, or the user asks for the V5 structured format, return every independently copied clip in exactly this field order:
-
-```text
-subject_definitions:
-summary:
-retention_analysis:
-detailed_description:
-[Shot 1]
-overall_soundscape:
-non_diegetic_music:
-```
-
-The fields are generation text, not an explanation of how the prompt was written. Do not insert director commentary, workflow notes, validation notes, or human-facing transition instructions into a clip. Shared era, world setting, aspect ratio, and global production style may be stated once in a file header for a multi-clip script; repeat them inside a clip only when they affect visible generation.
-
-### Subject definitions by reference-image mode
-
-Choose one mode from the actual inputs and keep the same rules throughout the clip.
-
-- **无参考图：** Define every visible person in detailed Chinese text: name or role, approximate age, face, hair, body proportions, wardrobe, personal prop, and immediate role in the action. Define exactly one `<场景>` with visible time, location, environment, spatial layout, and background conditions that affect the action. Do not add `<图 1>`, `@参考图`, or other invented image placeholders.
-- **单一参考图：** Attach the supplied reference identifier to the one subject it authorizes, for example `<主体 1>女掌柜@参考图1`. State the identity anchors that must remain stable: age range, face, hair, body proportions, wardrobe, distinctive prop, and role. Define every other person and `<场景>` in detailed text. Do not treat the single image as authority for unrelated characters, objects, or the whole background.
-- **多参考图：** Give each supplied reference identifier its own subject line, for example `<主体 1>李氏@参考图1` and `<主体 2>女伍长@参考图2`, with each reference's identity anchors kept on that line. Define unreferenced people and `<场景>` in detailed text. Never merge multiple characters into one reference line or use one reference image to redesign another.
-
-`subject_definitions` comes first and contains all major visible people plus one major visible scene. Do not put camera, lighting, sound, motivation, or filmmaking commentary in character definitions. A reference image controls identity and other supplied visual anchors; ignore unrelated source background unless the user explicitly makes it part of the scene.
-
-`summary` is one concise Chinese generation sentence containing duration, causal action, and the ending state. `retention_analysis` is minimal and contains only an absent subject, changed appearance or state, a continuity anchor at risk, or necessary spatial persistence; never copy the subject definitions. `detailed_description` contains production style, visible performance direction, and at most one necessary scene description. `[Shot 1]` is one continuous take with no hidden edit. Add `[Shot 2]` or more only for a real cut or separate camera setup, and give every shot its own action, camera movement, and ending state. `overall_soundscape` contains diegetic sound and dialogue only. `non_diegetic_music` contains score instructions only, or `无非叙事音乐`.
-
-Every entrance, line, prop, camera movement, and major action must have a visible or audible trigger in the same standalone clip. State action and dialogue order with explicit Chinese punctuation. A model receiving only one V5 block and its listed references must understand the location, participants, immediate cause, objective, obstacle, action, and ending state. Do not use cross-shot phrases such as “承接上一镜头”“如前”“继续” or pronouns whose referent exists only in another block.
+For Seedance 2.5 structured prompts, use a subject-first layout inspired by the local MiniMax H3 prompt workflow. The returned fields must be copy-ready generation text, not an explanation of the prompt or a director's commentary.
 
 ## Route the request
 
@@ -69,13 +41,50 @@ Read [references/scene-framework.md](references/scene-framework.md) for every re
 
 Write one internal sentence: what changes in the frame, and what should the viewer feel because of that change? Extract the before-state, objective, obstacle, stakes, subtext, turn, viewpoint relationship, and at most two visual motifs.
 
+### 1.25. Define subjects before actions
+
+Before describing movement, define every major visible person and the major visible scene. `subject_definitions` must include human identity, age, face, hair, body proportions, wardrobe, role, personal prop, reference-image authority, and presence or absence. It must also include one `<场景>` definition with the visible time, location, environment, spatial layout, and key background conditions that affect the action. Reference-image subjects use the supplied reference identifier; subjects without references use detailed appearance text. Do not put camera, lighting, sound, motivation, or filmmaking commentary in the character lines. For a reference image, preserve identity traits while ignoring unrelated source composition or background.
+
+### 1.26. Choose the V5 reference-image subject form
+
+When the user requests the Seedance 2.5 V5 format, choose exactly one of the following forms for `subject_definitions` according to the supplied inputs. Do not invent reference identifiers, and do not describe an absent reference image as if it exists.
+
+- **无参考图：** Define every visible person with detailed text: role or name, approximate age, face, hair, body proportions, clothing, personal prop, and immediate role in the action. Define one `<场景>` with visible time, location, environment, spatial layout, and relevant background conditions. Do not add image placeholders such as `<图 1>` or `@参考图`.
+- **单一参考图：** Use the single supplied reference identifier on the one subject it authorizes, followed by only the visible identity anchors that must be preserved: age range, face, hair, body proportions, wardrobe, distinctive prop, and role. Describe all other visible people and `<场景>` in text. Do not make the one reference image the authority for unrelated people, objects, or the whole background.
+- **多参考图：** Assign each supplied reference identifier to a distinct subject line, for example `<主体 1>李氏@参考图1` and `<主体 2>女伍长@参考图2`. Keep each reference's identity anchors on its own line. Define unreferenced people and `<场景>` in detailed text. Never merge multiple people into one reference line, and never use one reference image to redesign another subject.
+
+In all three forms, `subject_definitions` is a generation field, not an explanation to the user. Keep global era and production settings in the shared file header when several clips are delivered; repeat only visible facts that are necessary for this clip.
+
+### 1.5. Enforce causal and self-contained prompts
+
+Apply these rules to every generated shot, especially when the work comes from a script or storyboard:
+
+- **Causal anchoring:** Every character entrance, line, prop, camera move, and major action must have a sufficient visible cause. State who wants what now, what triggered the action, what blocks it, and what concrete result ends the shot. Do not allow a person or event to appear only because the script needs information delivered.
+- **Context anchoring:** Describe the shot's location, time, environmental conditions, relevant social rules, and each participating character's role or immediate background inside the shot prompt. The same scene's visible time, space, environment, and layout must also appear in `<场景>` under `subject_definitions`. Include only background facts that affect the action, but do not assume the model knows them from an earlier shot.
+- **Standalone description:** Each prompt must remain understandable when generated alone with only its assigned reference images. Never use instructions such as “continue the previous shot,” “return to reality,” “as before,” “the same person,” “next,” or pronouns whose referent exists only in another prompt. Repeat identity, wardrobe, key props, spatial relationship, and causal facts explicitly.
+- **Dialogue causality:** A line must be tied to the speaker's immediate objective and stimulus. If a line refers to an earlier event, state that event as an observable fact in the same prompt before the line. Do not add connective dialogue that is absent from the source script.
+
+### 1.55. Remove model-irrelevant narration
+
+- Return only text that can be pasted into the video generator. Do not include analysis, rationale, workflow notes, director commentary, validation notes, or instructions addressed to a human operator inside a clip prompt.
+- State shared world background, era, and global production defaults once at the beginning of a multi-clip file. Do not repeat them as generic sections inside every clip. Repeat a fact inside a clip only when it changes what the model must show.
+- In `retention_analysis`, mention only an absent subject, a changed appearance or state, a persistent identity anchor that is at risk, or a required spatial continuity. Do not copy `subject_definitions`; if nothing needs special retention, keep this field minimal.
+- Keep `detailed_description` to three jobs: production style and image formation, visible actor-performance direction, and at most one necessary scene description. Do not add separate world-setting, dramatic-engine, director-staging, continuity-rules, or action-analysis essays.
+
+### 1.6. Specify readable cinematic language
+
+- **Shot-language anchoring:** Every shot must state how the viewer sees the action, not only what happens. Name the shot size and viewpoint, the camera's stability or handheld quality, the primary movement and its speed, and the focus transition that motivates attention.
+- **Edit-rhythm anchoring:** When a shot contains rapid inserts, explicitly label the fast-cut subject and order; when it is continuous, say so and avoid implying an invisible cut. Fast cuts must reveal a causal chain, not decorative montage.
+- **Lens-and-perspective purpose:** Pair focal length and aperture with their visual job, such as a wide-angle low view for spatial pressure, a 50 mm two-shot for readable eyelines and hands, or an 85 mm close-up for a reaction and a controlled rack focus.
+- **Composition-to-result:** Describe the starting composition, the motivated camera path, and the ending composition so the model can hold the final frame. Do not stack contradictory movements such as a pan, dolly, zoom, and orbit without stating their order and reason.
+
 ### 2. Choose one shot or a sequence
 
 Split into multiple shots when there is a location change, time jump, incompatible framing, more than one major turn, or an action chain that cannot fit the duration. Give each shot a narrative duty, duration, start frame, end frame, and continuity interface.
 
 ### 3. Direct action and camera
 
-Give the subject one primary physical action with direction, speed, force, and a natural ending state. Use one primary camera movement with a start and end composition. Specify foreground, middle ground, background, focus behavior, motivated light, color relationship, secondary environmental motion, and sound when relevant.
+Give the subject one primary physical action with direction, speed, force, and a natural ending state. Use one primary camera movement with a start and end composition. Specify shot size, viewpoint, stability or handheld quality, movement path and speed, focus behavior, motivated light, color relationship, secondary environmental motion, and sound when relevant. If fast cuts or inserts are used, state their exact causal order and the visual information each cut contributes.
 
 For camera-relevant shots, include focal length in millimeters and aperture/f-stop with a visual reason:
 
@@ -92,6 +101,8 @@ For actor performance, convert emotion into stimulus, attention, breath, facial 
 ### 5. Compile and iterate
 
 Use direct positive sentences. Separate optional negative constraints from the main prompt. Before delivery, check duration fit, one primary change, stable identity, physically plausible motion, motivated light, explicit optics when relevant, and a holdable ending. If a generation fails, diagnose one layer and change one major variable in the next version.
+
+For script-derived sequences, perform a causal audit before delivery. Check every character entrance, spoken line, prop appearance, action, and reaction for a stated trigger and a visible result. Check every shot in isolation: a model receiving only that shot and its reference images must understand the setting, participants, immediate history, objective, obstacle, action, and ending state. Replace cross-shot references with explicit facts and repeat continuity anchors verbatim.
 
 ## Output contract
 
@@ -110,7 +121,37 @@ For actor-performance requests, use the same sections but ensure the prompt cont
 
 ### Multi-shot request
 
-Return a director overview, continuity bible, then each shot as `编号 / 叙事职责 / 时长 / 起始构图 / 结束构图 / 可复制提示词 / 声音或转场接口`.
+Return only a concise shared header when needed, followed by the copy-ready prompt blocks. Do not add a director overview, continuity bible, shot-plan table, narrative-duty labels, or human-facing transition notes. Each block must independently state its visible characters, necessary setting, trigger, causal action, dialogue stimulus, camera language, and concrete ending state. Do not use cross-shot pointers such as “承接上一镜头” or “下一镜头继续”.
+
+### Seedance 2.5 structured contract
+
+When the target is Seedance 2.5 or the user requests the detailed structured form, use this exact Chinese field order for every independently copied clip:
+
+```text
+subject_definitions:
+summary:
+retention_analysis:
+detailed_description:
+[Shot 1]
+overall_soundscape:
+non_diegetic_music:
+```
+
+`subject_definitions` must come first and define every major visible person plus one major visible scene: people require name or role, age, face, hair, body proportions, wardrobe, personal prop, reference-image authority, and presence or absence; `<场景>` requires visible time, location, environment, and spatial layout. Do not put camera, lighting, sound, motivation, or filmmaking commentary in character lines. `summary` is one concise generation sentence with duration, causal action, and ending state. `retention_analysis` contains only special preservation, absence, changed state, or spatial-continuity instructions and may be minimal. `detailed_description` contains only production style and actor-performance direction, with at most one necessary scene description. `[Shot 1]` means one continuous take with no edit; add `[Shot 2]` or more only when the clip genuinely contains a cut, and give each shot its own copy-ready action and camera text. Every action, entrance, prop, and line must have a visible or audible trigger in the same clip. Dialogue and action order use explicit Chinese punctuation. `overall_soundscape` contains only diegetic sound and dialogue. `non_diegetic_music` contains only score instructions or `无非叙事音乐`. Do not place human-facing explanation inside any field.
+
+For V5, apply the reference-image form in section 1.26 before writing the first field. The complete copy-ready block is the following, in this order, with no extra fields inserted between them:
+
+```text
+subject_definitions:
+summary:
+retention_analysis:
+detailed_description:
+[Shot 1]
+overall_soundscape:
+non_diegetic_music:
+```
+
+`[Shot 1]` means the entire clip is one continuous take. Add `[Shot 2]`, `[Shot 3]`, and so on only when the specified duration contains a real cut or a deliberately separated camera setup; each added shot must state its own start composition, motivated action, camera movement, and ending state. A prompt must be independently understandable with only its listed references. Do not put labels such as “图一图二” or human-facing notes into the generation text unless those labels are the actual reference identifiers supplied by the user.
 
 ### Prompt diagnosis
 
