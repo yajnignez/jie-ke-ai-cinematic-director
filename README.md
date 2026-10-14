@@ -32,6 +32,28 @@
 
 多镜头任务会先给出导演总方案和连续性圣经，再按镜头职责、时长、起止构图、提示词及声音/转场接口逐镜头展开。
 
+### Seedance 2.5 V5 格式
+
+当目标是 Seedance 2.5，或用户要求 V5 格式时，每个可独立复制的片段严格使用以下顺序：
+
+```text
+subject_definitions:
+summary:
+retention_analysis:
+detailed_description:
+[Shot 1]
+overall_soundscape:
+non_diegetic_music:
+```
+
+主体定义根据参考图数量选择形式：
+
+- 无参考图：每个人物用完整文字定义姓名或角色、年龄、面容、发型、体态、服装、道具和行动身份，并定义一个 `<场景>`。
+- 单一参考图：只把已提供的参考标识绑定到它授权的一个主体，同时用文字定义其他人物和 `<场景>`。
+- 多参考图：每张参考图各自绑定一个主体，例如 `<主体 1>李氏@参考图1`、`<主体 2>女伍长@参考图2`；无参考的人物与场景继续用完整文字定义。
+
+不得编造参考图标识，不得让单张参考图替代整场景或其他人物。`retention_analysis` 只写缺席、外形或状态变化、易丢失的身份锚点和必要的空间连续性。`[Shot 1]` 表示一镜到底，只有发生真实剪切或独立机位时才增加 `[Shot 2]` 等镜头。每个片段必须单独包含因果触发、动作顺序、对白标点、摄影机运动和结束状态。
+
 ### 安装
 
 将仓库复制到 Codex 个人 Skills 目录：
@@ -103,6 +125,28 @@ Single-shot tasks generally return:
 6. `Change One Thing Next`
 
 Multi-shot tasks begin with a director overview and continuity bible, then provide each shot's purpose, duration, start and end composition, prompt, and sound or transition interface.
+
+### Seedance 2.5 V5 format
+
+When the target is Seedance 2.5, or the user requests V5, every independently copyable clip uses this exact order:
+
+```text
+subject_definitions:
+summary:
+retention_analysis:
+detailed_description:
+[Shot 1]
+overall_soundscape:
+non_diegetic_music:
+```
+
+Choose the subject form from the supplied references:
+
+- No reference image: define every visible person in full text, including role or name, age, face, hair, body proportions, wardrobe, prop, and action role, plus one `<场景>` definition.
+- One reference image: bind the supplied reference identifier only to the subject it authorizes; define all other people and `<场景>` in text.
+- Multiple reference images: bind each supplied reference to its own subject line, such as `<主体 1>李氏@参考图1` and `<主体 2>女伍长@参考图2`; define unreferenced people and the scene in full text.
+
+Never invent reference identifiers or use one image as authority for the whole scene or another person. `retention_analysis` contains only absent subjects, changed appearance or state, identity anchors at risk, and necessary spatial continuity. `[Shot 1]` means one continuous take; add `[Shot 2]` only for a real cut or separate camera setup. Every clip independently states its causal trigger, action order, punctuated dialogue, camera movement, and ending state.
 
 ### Installation
 
